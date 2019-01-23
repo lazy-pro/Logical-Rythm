@@ -1,0 +1,54 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+from sklearn.model_selection import train_test_split
+from sklearn import linear_model
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+from sklearn.metrics import r2_score
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.feature_selection import RFE
+import matplotlib.pyplot as plt
+scaler = StandardScaler()
+import io
+data = pd.read_csv("./train.csv")
+data['month'] = data['month'].map({'feb': 1, 'jan': 0, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5, 'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11})
+data['day'] = data['day'].map({'mon': 1, 'sun': 0, 'tue': 2, 'wed': 3, 'thu': 4, 'fri': 5, 'sat': 6})
+#print data.corr(method='pearson')
+#print data.describe()
+
+
+data['day']=data['day']+data['month']*30
+
+
+used_features = [
+	"DMC","temp","RH","wind","day"
+	]
+
+	
+features = data[used_features]
+target = data["area"]
+
+feature_train, feature_test, target_train, target_test = train_test_split(features, target, test_size=0.20, random_state=42)
+
+reg = ExtraTreesRegressor(n_estimators=100)
+rfe = RFE(reg,5)
+rfe.fit(feature_train,target_train)
+print rfe.n_features_
+print rfe.support_
+print rfe.ranking_
+print rfe.score(feature_test,target_test)
+
+test = pd.read_csv("./test.csv")
+test['month'] = test['month'].map({'feb': 1, 'jan': 0, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5, 'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11})
+test['day'] = test['day'].map({'mon': 1, 'sun': 0, 'tue': 2, 'wed': 3, 'thu': 4, 'fri': 5, 'sat': 6})
+test['day']=test['day']+test['month']*30
+test_fea = test[used_features]
+aid = test["Id"]
+#rfe.fit(features,target)
+res = rfe.predict(test_fea)
+
+df = pd.DataFrame(data={"Id": aid, "Zarea": res})
+df.to_csv("./oout.csv", sep=',',index=False)
